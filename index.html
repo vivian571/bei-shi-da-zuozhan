@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>背诗大作战 · 七上古诗文</title>
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body { margin:0; font-family: -apple-system, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif; background:#FFF8EE; color:#3a2e1f; }
+  #app { max-width:640px; margin:0 auto; min-height:100vh; padding:16px 16px 40px; }
+  h1 { text-align:center; font-size:26px; margin:8px 0 2px; }
+  .sub { text-align:center; color:#8a7a5f; font-size:13px; margin-bottom:14px; }
+  .screen { display:none; }
+  .screen.on { display:block; animation:fadein .25s; }
+  @keyframes fadein { from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:none;} }
+  .btn { display:block; width:100%; padding:14px; margin:10px 0; font-size:17px; border:none; border-radius:14px; background:#FF9F43; color:#fff; font-weight:700; cursor:pointer; box-shadow:0 3px 0 #d97f26; }
+  .btn:active { transform:translateY(2px); box-shadow:none; }
+  .btn.blue { background:#54a0ff; box-shadow:0 3px 0 #3a7bd5; }
+  .btn.green { background:#1dd1a1; box-shadow:0 3px 0 #10a37e; }
+  .btn.purple { background:#a55eea; box-shadow:0 3px 0 #7d3fc4; }
+  .btn.gray { background:#c8bfae; box-shadow:0 3px 0 #a89e88; }
+  .btn.small { width:auto; display:inline-block; padding:9px 18px; font-size:15px; margin:6px 4px 6px 0; }
+  .grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .card { background:#fff; border-radius:14px; padding:12px; border:2px solid #f0e4cd; cursor:pointer; position:relative; }
+  .card:active { transform:scale(.97); }
+  .card .t { font-weight:700; font-size:15px; }
+  .card .a { font-size:12px; color:#8a7a5f; margin-top:2px; }
+  .card .star { position:absolute; top:8px; right:10px; font-size:16px; }
+  .card.lit { border-color:#FF9F43; background:#fffdf7; }
+  .poemline { font-size:19px; line-height:2.1; margin:4px 0; }
+  .slot { display:inline-block; min-width:30px; height:34px; line-height:32px; text-align:center; border-bottom:3px solid #FF9F43; margin:0 2px; font-size:19px; cursor:pointer; vertical-align:bottom; color:#d35400; font-weight:700; }
+  .slot.wrong { border-color:#ee5253; color:#ee5253; animation:shake .3s; }
+  .slot.right { border-color:#1dd1a1; color:#1d9e78; }
+  @keyframes shake { 0%,100%{transform:translateX(0);} 25%{transform:translateX(-4px);} 75%{transform:translateX(4px);} }
+  #tilebank { margin-top:14px; text-align:center; min-height:60px; }
+  .tile { display:inline-block; min-width:44px; height:44px; line-height:44px; padding:0 10px; margin:5px; font-size:20px; background:#fff; border:2px solid #54a0ff; border-radius:10px; cursor:pointer; font-weight:700; }
+  .tile:active { transform:scale(.92); }
+  .tile.used { visibility:hidden; }
+  .opt { display:block; width:100%; text-align:left; padding:13px 14px; margin:8px 0; font-size:17px; background:#fff; border:2px solid #e8dcc3; border-radius:12px; cursor:pointer; }
+  .opt.right { border-color:#1dd1a1; background:#e8faf3; }
+  .opt.wrong { border-color:#ee5253; background:#fdeeee; }
+  .qline { font-size:21px; background:#fff; border-radius:12px; padding:16px; margin:12px 0; border:2px dashed #FF9F43; line-height:1.9; }
+  .scorebar { display:flex; justify-content:space-around; background:#fff; border-radius:12px; padding:12px; margin:10px 0; font-size:17px; font-weight:700; }
+  .scorebar .turn { color:#d35400; }
+  .big { font-size:44px; text-align:center; margin:18px 0 6px; }
+  .center { text-align:center; }
+  .mutebtn { position:fixed; top:10px; right:12px; font-size:20px; background:#fff; border:2px solid #e8dcc3; border-radius:50%; width:40px; height:40px; cursor:pointer; z-index:10; }
+  input.nm { width:44%; padding:10px; font-size:16px; border-radius:10px; border:2px solid #e8dcc3; margin:4px 1%; }
+  .note { font-size:13px; color:#8a7a5f; line-height:1.7; background:#fff; border-radius:12px; padding:12px; margin-top:14px; }
+  .diffrow { display:flex; gap:8px; }
+  .diffrow .btn { margin:6px 0; }
+</style>
+</head>
+<body>
+<button class="mutebtn" id="mutebtn" onclick="toggleMute()">🔊</button>
+<div id="app">
+
+  <!-- 首页 -->
+  <div class="screen on" id="s-home">
+    <h1>📜 背诗大作战</h1>
+    <div class="sub">七上古诗文必背 · 12 诗 + 7 文 · <span id="prog">0/19</span> 已点亮</div>
+    <div class="grid" id="piecegrid"></div>
+    <button class="btn purple" onclick="show('s-duel-setup')">⚔️ 双人 PK（妈妈 vs 宝贝）</button>
+    <div class="note">玩法：点一篇 → 选「挖空补字」或「接龙对诗」单人挑战，通关点亮 ✨<br>双人 PK：两人轮流背，App 当裁判，先到 5 分赢。文言文用的是名句版，全文在 PDF 里。</div>
+  </div>
+
+  <!-- 篇目页 -->
+  <div class="screen" id="s-piece">
+    <h1 id="p-title"></h1>
+    <div class="sub" id="p-author"></div>
+    <div class="center">
+      <button class="btn blue small" onclick="toggleFull()">📖 看全文</button>
+    </div>
+    <div id="p-full" style="display:none" class="qline"></div>
+    <div class="diffrow">
+      <button class="btn" onclick="startFill(0)">🌱 简单</button>
+      <button class="btn blue" onclick="startFill(1)">🌿 进阶</button>
+      <button class="btn purple" onclick="startFill(2)">🌳 挑战</button>
+    </div>
+    <button class="btn green" onclick="startChain()">🔗 接龙对诗</button>
+    <button class="btn gray" onclick="show('s-home')">← 返回</button>
+  </div>
+
+  <!-- 挖空 -->
+  <div class="screen" id="s-fill">
+    <h1 id="f-title"></h1>
+    <div class="sub" id="f-diff"></div>
+    <div id="f-lines"></div>
+    <div id="tilebank"></div>
+    <div class="center" style="margin-top:10px">
+      <button class="btn blue small" onclick="hint()">💡 提示 (<span id="hintn">2</span>)</button>
+      <button class="btn green small" onclick="checkFill()">✅ 检查</button>
+      <button class="btn gray small" onclick="newFill()">🎲 换一局</button>
+      <button class="btn gray small" onclick="backToPiece()">← 返回</button>
+    </div>
+    <div id="f-result" class="center" style="font-size:18px;font-weight:700;margin-top:8px"></div>
+  </div>
+
+  <!-- 接龙 -->
+  <div class="screen" id="s-chain">
+    <h1>🔗 接龙对诗</h1>
+    <div class="sub" id="c-prog"></div>
+    <div class="qline" id="c-q"></div>
+    <div id="c-opts"></div>
+    <div class="center"><button class="btn gray small" onclick="backToPiece()">← 返回</button></div>
+  </div>
+
+  <!-- 双人设置 -->
+  <div class="screen" id="s-duel-setup">
+    <h1>⚔️ 双人 PK</h1>
+    <div class="sub">轮流背诗，App 当裁判，先到 5 分获胜</div>
+    <div class="center">
+      <input class="nm" id="nm1" value="妈妈" maxlength="6">
+      <input class="nm" id="nm2" value="宝贝" maxlength="6">
+    </div>
+    <div class="center" style="margin-top:6px">
+      <button class="btn blue small" onclick="duelScope='all';startDuel()">🎲 全部 19 篇混战</button>
+      <button class="btn green small" onclick="duelScope='one';startDuel()">🎯 只玩当前这一篇</button>
+    </div>
+    <div class="note" id="duel-scope-note"></div>
+    <button class="btn gray" onclick="show('s-home')">← 返回</button>
+  </div>
+
+  <!-- 双人对战 -->
+  <div class="screen" id="s-duel">
+    <h1>⚔️ 双人 PK</h1>
+    <div class="scorebar"><span id="d-s1"></span><span>VS</span><span id="d-s2"></span></div>
+    <div class="sub" id="d-turn"></div>
+    <div class="qline" id="d-q"></div>
+    <div class="sub" id="d-src" style="font-size:12px"></div>
+    <div class="center" id="d-stage1">
+      <div style="margin:8px 0">👆 轮到的人大声背出下句，然后点：</div>
+      <button class="btn blue" onclick="duelReveal()">👀 看答案核对</button>
+    </div>
+    <div class="center" id="d-stage2" style="display:none">
+      <div class="qline" id="d-a" style="border-color:#1dd1a1"></div>
+      <button class="btn green small" onclick="duelJudge(true)">✅ 背对了</button>
+      <button class="btn small" style="background:#ee5253;box-shadow:0 3px 0 #c0392b" onclick="duelJudge(false)">❌ 背错 / 卡住</button>
+    </div>
+    <div class="center"><button class="btn gray small" onclick="show('s-home')">结束</button></div>
+  </div>
+
+  <!-- 胜利 -->
+  <div class="screen" id="s-win">
+    <div class="big">🏆</div>
+    <h1 id="w-text" class="center"></h1>
+    <div class="center" style="font-size:18px" id="w-sub"></div>
+    <div class="center" style="margin-top:14px">
+      <button class="btn" onclick="show('s-home')">← 回首页</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+"use strict";
+/* ===== 数据：12 诗 + 7 文（名句版），文字与上传 PDF 一致 ===== */
+const PIECES = [
+{id:"gcanghai",title:"观沧海",author:"曹操",dyn:"东汉末年",type:"诗",lines:["东临碣石，以观沧海。","水何澹澹，山岛竦峙。","树木丛生，百草丰茂。","秋风萧瑟，洪波涌起。","日月之行，若出其中；","星汉灿烂，若出其里。","幸甚至哉，歌以咏志。"]},
+{id:"wcl",title:"闻王昌龄左迁龙标遥有此寄",author:"李白",dyn:"唐代",type:"诗",lines:["杨花落尽子规啼，","闻道龙标过五溪。","我寄愁心与明月，","随君直到夜郎西。"]},
+{id:"cbg",title:"次北固山下",author:"王湾",dyn:"唐代",type:"诗",lines:["客路青山外，","行舟绿水前。","潮平两岸阔，","风正一帆悬。","海日生残夜，","江春入旧年。","乡书何处达？","归雁洛阳边。"]},
+{id:"tjs",title:"天净沙·秋思",author:"马致远",dyn:"元代",type:"诗",lines:["枯藤老树昏鸦，","小桥流水人家，","古道西风瘦马。","夕阳西下，","断肠人在天涯。"]},
+{id:"ems",title:"峨眉山月歌",author:"李白",dyn:"唐代",type:"诗",lines:["峨眉山月半轮秋，","影入平羌江水流。","夜发清溪向三峡，","思君不见下渝州。"]},
+{id:"jnl",title:"江南逢李龟年",author:"杜甫",dyn:"唐代",type:"诗",lines:["岐王宅里寻常见，","崔九堂前几度闻。","正是江南好风景，","落花时节又逢君。"]},
+{id:"xjr",title:"行军九日思长安故园",author:"岑参",dyn:"唐代",type:"诗",lines:["强欲登高去，","无人送酒来。","遥怜故园菊，","应傍战场开。"]},
+{id:"ysx",title:"夜上受降城闻笛",author:"李益",dyn:"唐代",type:"诗",lines:["回乐烽前沙似雪，","受降城外月如霜。","不知何处吹芦管，","一夜征人尽望乡。"]},
+{id:"qc",title:"秋词（其一）",author:"刘禹锡",dyn:"唐代",type:"诗",lines:["自古逢秋悲寂寥，","我言秋日胜春朝。","晴空一鹤排云上，","便引诗情到碧霄。"]},
+{id:"yyj",title:"夜雨寄北",author:"李商隐",dyn:"唐代",type:"诗",lines:["君问归期未有期，","巴山夜雨涨秋池。","何当共剪西窗烛，","却话巴山夜雨时。"]},
+{id:"syy",title:"十一月四日风雨大作（其二）",author:"陆游",dyn:"宋代",type:"诗",lines:["僵卧孤村不自哀，","尚思为国戍轮台。","夜阑卧听风吹雨，","铁马冰河入梦来。"]},
+{id:"tg",title:"潼关",author:"谭嗣同",dyn:"清代",type:"诗",lines:["终古高云簇此城，","秋风吹散马蹄声。","河流大野犹嫌束，","山入潼关不解平。"]},
+{id:"yx",title:"咏雪",author:"刘义庆",dyn:"南朝宋",type:"文",lines:["白雪纷纷何所似？","撒盐空中差可拟。","未若柳絮因风起。"]},
+{id:"ctq",title:"陈太丘与友期行",author:"刘义庆",dyn:"南朝宋",type:"文",lines:["君与家君期日中，","日中不至，则是无信；","对子骂父，则是无礼。"]},
+{id:"ly",title:"论语十二章",author:"孔子及其弟子",dyn:"春秋",type:"文",lines:["学而时习之，不亦说乎？","温故而知新，可以为师矣。","学而不思则罔，思而不学则殆。","三人行，必有我师焉。","逝者如斯夫，不舍昼夜。"]},
+{id:"jzs",title:"诫子书",author:"诸葛亮",dyn:"三国",type:"文",lines:["非淡泊无以明志，","非宁静无以致远。","淫慢则不能励精，","险躁则不能治性。"]},
+{id:"lang",title:"狼",author:"蒲松龄",dyn:"清代",type:"文",lines:["狼亦黠矣，","而顷刻两毙，","禽兽之变诈几何哉？","止增笑耳。"]},
+{id:"cj",title:"穿井得一人",author:"吕不韦",dyn:"战国",type:"文",lines:["得一人之使，","非得一人于井中也。"]},
+{id:"qr",title:"杞人忧天",author:"《列子》",dyn:"战国",type:"文",lines:["天，积气耳，亡处亡气。","日月星宿，亦积气中之有光耀者。"]}
+];
+const PUNCT = new Set(["，","。","；","：","？","！","、","…","—","·","「","」","『","』","（","）","《","》","〈","〉","“","”"]);
+const $ = id => document.getElementById(id);
+function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); const t=a[i]; a[i]=a[j]; a[j]=t; } return a; }
+function show(id){ document.querySelectorAll(".screen").forEach(s=>s.classList.remove("on")); $(id).classList.add("on"); window.scrollTo(0,0); }
+/* 音效 */
+let soundOn = true, AC=null;
+function beep(f,d){ if(!soundOn) return; try{ AC = AC || new (window.AudioContext||window.webkitAudioContext)(); const o=AC.createOscillator(), g=AC.createGain(); o.connect(g); g.connect(AC.destination); o.type="sine"; o.frequency.value=f; g.gain.setValueAtTime(0.12,AC.currentTime); g.gain.exponentialRampToValueAtTime(0.001,AC.currentTime+d); o.start(); o.stop(AC.currentTime+d);}catch(e){} }
+function toggleMute(){ soundOn=!soundOn; $("mutebtn").textContent = soundOn?"🔊":"🔇"; }
+/* 进度 */
+let prog = {};
+try{ prog = JSON.parse(localStorage.getItem("bsdz-prog")||"{}"); }catch(e){ prog={}; }
+function saveProg(){ try{ localStorage.setItem("bsdz-prog",JSON.stringify(prog)); }catch(e){} }
+function light(id){ if(!prog[id]){ prog[id]=1; saveProg(); renderGrid(); } }
+/* 首页 */
+let curPiece = null, duelScope = "all";
+function renderGrid(){
+  const g = $("piecegrid"); g.innerHTML = "";
+  let n = 0;
+  PIECES.forEach(p=>{
+    const lit = prog[p.id]; if(lit) n++;
+    const d = document.createElement("div");
+    d.className = "card"+(lit?" lit":"");
+    d.innerHTML = '<div class="star">'+(lit?"✨":"")+'</div><div class="t">'+p.title+'</div><div class="a">'+p.author+" · "+p.dyn+" · "+p.type+"</div>";
+    d.onclick = ()=>openPiece(p.id);
+    g.appendChild(d);
+  });
+  $("prog").textContent = n+"/"+PIECES.length;
+}
+function openPiece(id){
+  curPiece = PIECES.find(p=>p.id===id);
+  $("p-title").textContent = curPiece.title;
+  $("p-author").textContent = curPiece.author+"〔"+curPiece.dyn+"〕";
+  $("p-full").style.display = "none";
+  $("p-full").innerHTML = curPiece.lines.map(l=>'<div class="poemline">'+l+"</div>").join("");
+  show("s-piece");
+}
+function toggleFull(){ const el=$("p-full"); el.style.display = el.style.display==="none"?"block":"none"; }
+function backToPiece(){ if(curPiece) openPiece(curPiece.id); else show("s-home"); }
+/* ===== 挖空补字 ===== */
+let F = null;
+function startFill(level){
+  if(!curPiece) return;
+  newFill(level||0);
+}
+function newFill(level){
+  const p = curPiece, chars = [];
+  p.lines.forEach((ln,li)=>{ [...ln].forEach((ch,ci)=>{ if(!PUNCT.has(ch)) chars.push({li,ci,ch}); }); });
+  shuffle(chars);
+  const n = Math.min([3,6,10][level], chars.length);
+  const blanks = chars.slice(0,n).sort((a,b)=>a.li-b.li||a.ci-b.ci);
+  const bset = new Set(blanks.map(b=>b.li+":"+b.ci));
+  const pool = [...new Set(chars.filter(c=>!bset.has(c.li+":"+c.ci)).map(c=>c.ch))].filter(ch=>!blanks.some(b=>b.ch===ch));
+  shuffle(pool);
+  const tiles = shuffle(blanks.map(b=>({ch:b.ch,used:false})).concat(pool.slice(0,4).map(ch=>({ch,used:false,decoy:true}))));
+  F = { pieceId:p.id, level, blanks, tiles, placed:new Array(n).fill(-1), hints:2, done:false };
+  $("f-title").textContent = "🧩 "+p.title;
+  $("f-diff").textContent = ["🌱 简单（3空）","🌿 进阶（6空）","🌳 挑战（10空）"][level];
+  $("hintn").textContent = F.hints;
+  $("f-result").textContent = "";
+  renderFill();
+  show("s-fill");
+}
+function renderFill(){
+  const p = PIECES.find(x=>x.id===F.pieceId);
+  const bmap = {}; F.blanks.forEach((b,i)=>{ bmap[b.li+":"+b.ci]=i; });
+  let html = "";
+  p.lines.forEach((ln,li)=>{
+    html += '<div class="poemline">';
+    [...ln].forEach((ch,ci)=>{
+      const bi = bmap[li+":"+ci];
+      if(bi===undefined){ html += ch; }
+      else{
+        const ti = F.placed[bi];
+        const val = ti>=0 ? F.tiles[ti].ch : "";
+        html += '<span class="slot" data-bi="'+bi+'" onclick="unplace('+bi+')">'+val+"</span>";
+      }
+    });
+    html += "</div>";
+  });
+  $("f-lines").innerHTML = html;
+  let tb = "";
+  F.tiles.forEach((t,ti)=>{ if(!t.used) tb += '<span class="tile" onclick="place('+ti+')">'+t.ch+"</span>"; });
+  $("tilebank").innerHTML = tb || "🎉 字都放好啦，点「检查」！";
+}
+function place(ti){
+  if(F.done) return;
+  const bi = F.placed.findIndex(x=>x<0);
+  if(bi<0) return;
+  F.placed[bi]=ti; F.tiles[ti].used=true; beep(520,.08); renderFill();
+}
+function unplace(bi){
+  if(F.done) return;
+  const ti = F.placed[bi];
+  if(ti>=0){ F.placed[bi]=-1; F.tiles[ti].used=false; renderFill(); }
+}
+function hint(){
+  if(F.done || F.hints<=0) return;
+  const bi = F.placed.findIndex((t,i)=>t<0 || F.tiles[t].ch!==F.blanks[i].ch);
+  if(bi<0) return;
+  const need = F.blanks[bi].ch;
+  // 先把被错放到别处的同字 tile 释放出来
+  F.tiles.forEach((t,ti)=>{ if(t.used && t.ch===need){ const pi=F.placed.indexOf(ti); if(pi>=0 && pi!==bi){ F.placed[pi]=-1; t.used=false; } } });
+  const old = F.placed[bi];
+  if(old>=0) F.tiles[old].used=false;
+  const ti = F.tiles.findIndex(t=>!t.used && t.ch===need);
+  if(ti>=0){ F.placed[bi]=ti; F.tiles[ti].used=true; }
+  F.hints--; $("hintn").textContent=F.hints; beep(660,.1); renderFill();
+}
+function checkFill(){
+  if(F.done) return;
+  if(F.placed.some(t=>t<0)){ $("f-result").textContent="还有空没填完哦～"; return; }
+  F.done = true;
+  let right = 0;
+  F.blanks.forEach((b,i)=>{
+    const ok = F.tiles[F.placed[i]].ch===b.ch;
+    if(ok) right++;
+    document.querySelectorAll(".slot").forEach(s=>{
+      if(+s.dataset.bi===i) s.classList.add(ok?"right":"wrong");
+    });
+  });
+  const n = F.blanks.length, usedHint = F.hints<2;
+  let stars = 0, msg="";
+  if(right===n && !usedHint){ stars=3; msg="🎉 全对！三星！"; beep(880,.15); setTimeout(()=>beep(1174,.2),150); }
+  else if(right===n){ stars=2; msg="🎉 全对！两星（用了提示）"; beep(880,.15); }
+  else if(right>=Math.ceil(n*0.6)){ stars=1; msg="💪 对了 "+right+"/"+n+"，红色的是放错的，点它拿回来重放"; beep(440,.15); }
+  else { msg="😅 只对了 "+right+"/"+n+"，再想想，点红色格子可以拿回字"; beep(330,.2); }
+  // 允许修正：错的格子可点
+  if(right<n){ F.done=false; }
+  else { light(F.pieceId); }
+  $("f-result").textContent = msg + (stars? "  "+"⭐".repeat(stars):"");
+}
+/* ===== 接龙对诗 ===== */
+let C = null;
+function startChain(){
+  C = { piece:curPiece, round:0, score:0, total:8 };
+  nextChain(); show("s-chain");
+}
+function allLines(exceptPiece){
+  const out=[];
+  PIECES.forEach(p=>{ p.lines.forEach(l=>{ out.push({line:l, pid:p.id}); }); });
+  return out;
+}
+function nextChain(){
+  if(C.round>=C.total){
+    $("c-q").innerHTML = "🏁 挑战结束！";
+    $("c-opts").innerHTML = '<div class="center" style="font-size:22px;font-weight:700;margin:14px">得分：'+C.score+" / "+C.total+"</div>";
+    if(C.score>=6){ $("c-opts").innerHTML += '<div class="center">🎉 太厉害了，'+C.piece.title+"点亮！"+"</div>"; light(C.piece.id); beep(880,.15); setTimeout(()=>beep(1174,.2),150); }
+    $("c-prog").textContent = "完成";
+    return;
+  }
+  const pool = C.piece ? [C.piece] : PIECES;
+  const p = pool[Math.floor(Math.random()*pool.length)];
+  const i = Math.floor(Math.random()*(p.lines.length-1));
+  const correct = p.lines[i+1];
+  const cands = shuffle(allLines().filter(o=>o.line!==correct && o.line!==p.lines[i])).slice(0,3).map(o=>o.line);
+  const opts = shuffle([correct].concat(cands));
+  C.round++;
+  $("c-prog").textContent = "第 "+C.round+" / "+C.total+" 题 · 得分 "+C.score;
+  $("c-q").innerHTML = '<div style="font-size:13px;color:#8a7a5f">《'+p.title+"》上句 👇</div>"+p.lines[i];
+  $("c-opts").innerHTML = "";
+  opts.forEach(o=>{
+    const b = document.createElement("button");
+    b.className="opt"; b.textContent=o;
+    b.onclick = ()=>{
+      document.querySelectorAll("#c-opts .opt").forEach(x=>{ x.onclick=null; if(x.textContent===correct) x.classList.add("right"); });
+      if(o===correct){ C.score++; beep(880,.12); }
+      else { b.classList.add("wrong"); beep(330,.18); }
+      setTimeout(nextChain, 900);
+    };
+    $("c-opts").appendChild(b);
+  });
+}
+/* ===== 双人 PK ===== */
+let D = null;
+function startDuel(){
+  const n1 = $("nm1").value.trim()||"妈妈", n2 = $("nm2").value.trim()||"宝贝";
+  D = { names:[n1,n2], scores:[0,0], turn:0, target:5 };
+  $("d-s1").textContent = n1+"：0"; $("d-s2").textContent = "0："+n2;
+  $("duel-scope-note") && ($("duel-scope-note").textContent = "");
+  nextDuel(); show("s-duel");
+}
+function duelPool(){
+  if(duelScope==="one" && curPiece) return [curPiece];
+  return PIECES;
+}
+function nextDuel(){
+  const pool = duelPool();
+  const p = pool[Math.floor(Math.random()*pool.length)];
+  const i = Math.floor(Math.random()*(p.lines.length-1));
+  D.q = p.lines[i]; D.a = p.lines[i+1]; D.title = p.title;
+  $("d-turn").innerHTML = '👉 轮到 <span class="turn">'+D.names[D.turn]+"</span> 背下句";
+  $("d-q").textContent = D.q;
+  $("d-src").textContent = "——《"+D.title+"》上句";
+  $("d-stage1").style.display="block"; $("d-stage2").style.display="none";
+}
+function duelReveal(){ $("d-a").textContent = D.a; $("d-stage1").style.display="none"; $("d-stage2").style.display="block"; }
+function duelJudge(ok){
+  if(ok){ D.scores[D.turn]++; beep(880,.12); } else { beep(330,.15); }
+  const w = D.scores[D.turn]>=D.target ? D.turn : -1;
+  $("d-s1").textContent = D.names[0]+"："+D.scores[0];
+  $("d-s2").textContent = D.scores[1]+"："+D.names[1];
+  if(w>=0){
+    $("w-text").textContent = "🏆 "+D.names[w]+" 获胜！";
+    $("w-sub").textContent = D.scores[0]+" : "+D.scores[1];
+    show("s-win"); beep(880,.15); setTimeout(()=>beep(1174,.25),180);
+    return;
+  }
+  D.turn = 1-D.turn;
+  nextDuel();
+}
+renderGrid();
+</script>
+</body>
+</html>
